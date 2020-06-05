@@ -2,40 +2,98 @@
 
 include 'header.php';
 include 'functions.php';
+include 'htmlfunctions.php';
 
-$handle = fopen('C:\wamp64\www\tbasak\file-explorer\.cache.txt', 'a+');
-if (!filesize('C:\wamp64\www\tbasak\file-explorer\.cache.txt')) {
-    fwrite($handle, getcwd());
-}
-fclose($handle);
+$showHidden = false;
+$hideShow = 'HIDE';
+$A = 'A';
+$hiddenStyle = 'bg-red';
 
-if (isset($_POST['choosen'])){
-  if (is_dir(file_get_contents('C:\wamp64\www\tbasak\file-explorer\.cache.txt') . DIRECTORY_SEPARATOR . $_POST['choosen'])) {
-    $cache = file_get_contents('C:\wamp64\www\tbasak\file-explorer\.cache.txt');
-    $handle = fopen('C:\wamp64\www\tbasak\file-explorer\.cache.txt', 'w+');
-    fwrite($handle, $cache . DIRECTORY_SEPARATOR . $_POST['choosen']);
-    chdir(file_get_contents('C:\wamp64\www\tbasak\file-explorer\.cache.txt'));
-  }
-  $_POST['choosen'] = '';
-}
-
-$files = scandir(getcwd());
-
-echo "<div class='container text-center'>";
-
-foreach ($files as $file) {
-  if ($file !== '.') {
-    if (is_dir(file_get_contents('C:\wamp64\www\tbasak\file-explorer\.cache.txt') . DIRECTORY_SEPARATOR . $file)) {
-      echo "<form method='POST'>";
-      echo "<input type='hidden' name='choosen' value='" . $file . "'>";
-      echo "<a href='index.php'><button type='submit'>" . $file . "</button></a>";
-      echo "</form>";
-    }
-    else {
-      echo "<a href='" . $file . "'><button>" . $file . "</button></a>";
-    }
+if (isset($_POST['pressed'])) {
+  $pressed = $_POST['pressed'];
+  if ($_POST['pressed'][0] === 'A'){
+    $showHidden = true;
+    $hideShow = 'SHOW';
+    $A = '';
+    $pressed = substr($_POST['pressed'], 1);
   }
 }
-echo "</div>";
+else {
+  $pressed = getcwd();
+}
+chdir($pressed);
+
+if ($showHidden) {
+  $hiddenStyle = 'bg-blue';
+}
+
+div('container-fluid top-menu border text-center row');
+
+//Menu d'arboressance
+if (getcwd() !== 'C:' . DIRECTORY_SEPARATOR) {
+  $cwd = explode(DIRECTORY_SEPARATOR, getcwd());
+}
+else {
+  $cwd = array(getcwd());
+}
+div('');
+div('row ml-2');
+$cwdroad = '';
+foreach ($cwd as $item) {
+  $cwdroad = $cwdroad . $item . DIRECTORY_SEPARATOR;
+  div('d-flex menu-item');
+  echo "<form method='POST'>";
+  echo "<input type='hidden' name='pressed' value='" . $cwdroad . "'>";
+  echo "<a href='index.php'><button class='menu-btn' type='submit'>" . $item . "</button></a>";
+  echo "</form>";
+  endDiv();
+}
+endDiv();
+endDiv();
+
+//Option d'affichage;
+div('hidden-file-div d-flex ml-auto ' . $hiddenStyle);
+echo "<form method='POST'>";
+echo "<input type='hidden' name='pressed' value='" . $A . $cwdroad . "'>";
+echo "<a href='index.php'><button class='hidden-file-btn' type='submit'>" . $hideShow . "</button></a>";
+echo "</form>";
+endDiv();
+
+endDiv();
+
+
+
+div('container-fluid super-content border');
+div('container-fluid content row text-center');
+$content = scandir(getcwd());
+$folders = array();
+foreach ($content as $item) {
+  if (!(!$showHidden && $item[0] === '.') && $item !== '.' && $item !== '..' && is_dir($pressed . DIRECTORY_SEPARATOR . $item)) {
+    array_push($folders, $item);
+  }
+}
+foreach ($folders as $item) {
+  div('item-folder d-flex');
+  echo "<form method='POST'>";
+  echo "<input type='hidden' name='pressed' value='" . getcwd() . DIRECTORY_SEPARATOR . $item . "'>";
+  echo "<a href='index.php'><button class='item-btn' type='submit'><span class='item-text'>" . $item . "</span></button></a>";
+  echo "</form>";
+  endDiv();
+}
+
+$files = array();
+foreach ($content as $item) {
+  if (!(!$showHidden && $item[0] === '.') && !is_dir($pressed . DIRECTORY_SEPARATOR . $item)) {
+    array_push($files, $item);
+  }
+}
+foreach ($files as $item) {
+  div('item-file d-flex');
+  echo "<a href='" . $item . "'><button class='item-btn'><span class='item-text'>" . $item . "</span></button></a>";
+  endDiv();
+}
+
+endDiv();
+endDiv();
 
 include 'footer.php';
